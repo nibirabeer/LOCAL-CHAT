@@ -2,6 +2,15 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<script>
+  // Applied before first paint so a saved theme choice never flashes the
+  // wrong colors — if nothing's saved, prefers-color-scheme in CSS decides.
+  (function(){
+    var saved = localStorage.getItem('lc_theme');
+    if(saved === 'dark' || saved === 'light') document.documentElement.setAttribute('data-theme', saved);
+    if(localStorage.getItem('lc_sidebar_collapsed') === '1') document.documentElement.classList.add('sidebar-collapsed-init');
+  })();
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#FFD200">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -23,9 +32,44 @@
     --line:#111111;
     --muted:#6b6b6b;
     --bubble-user:#F6E7A8;
+    --tint:#f0eee8;
+    --muted-on-ink:#bbb;
+    /* --accent/--accent2 stay vivid in both themes, so text/icons sitting on
+       them need a permanently-dark color — var(--ink) would go light in dark
+       mode and wash out against the still-bright yellow/orange underneath. */
+    --ink-on-accent:#111111;
     --shadow: 4px 4px 0 var(--ink);
     --shadow-sm: 3px 3px 0 var(--ink);
     --shadow-soft: 3px 3px 0 rgba(17,17,17,0.22);
+  }
+  /* Dark theme: applied automatically when the OS prefers dark and the user
+     hasn't explicitly chosen light, OR forced on via data-theme="dark".
+     --accent/--accent2/--green are intentionally left unchanged — they pop
+     on dark backgrounds too. --shadow/--shadow-sm re-derive automatically
+     since they reference var(--ink). */
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#121212;
+      --panel:#1c1c1c;
+      --ink:#F2F0EA;
+      --line:#F2F0EA;
+      --muted:#9c9c94;
+      --bubble-user:#6b4f14;
+      --tint:#242424;
+      --muted-on-ink:#54524a;
+      --shadow-soft: 3px 3px 0 rgba(242,240,234,0.16);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#121212;
+    --panel:#1c1c1c;
+    --ink:#F2F0EA;
+    --line:#F2F0EA;
+    --muted:#9c9c94;
+    --bubble-user:#4a3f14;
+    --tint:#242424;
+    --muted-on-ink:#54524a;
+    --shadow-soft: 3px 3px 0 rgba(242,240,234,0.16);
   }
   *{box-sizing:border-box;}
   html,body{
@@ -74,6 +118,7 @@
     padding:16px;
     border-bottom:3px solid var(--line);
     background:var(--accent);
+    color:var(--ink-on-accent);
   }
   #brand small{
     display:block;
@@ -166,7 +211,7 @@
     color:var(--muted);
     font-weight:500;
   }
-  .model-btn.active .model-tag{color:#bbb;}
+  .model-btn.active .model-tag{color:var(--muted-on-ink);}
 
   #status{
     margin-top:auto;
@@ -227,7 +272,7 @@
     justify-content:space-between;
     gap:10px;
     background:repeating-linear-gradient(
-      45deg, var(--panel), var(--panel) 10px, #f0eee8 10px, #f0eee8 11px
+      45deg, var(--panel), var(--panel) 10px, var(--tint) 10px, var(--tint) 11px
     );
   }
   .header-left, .header-right{ display:flex; align-items:center; gap:10px; min-width:0; }
@@ -245,14 +290,18 @@
     white-space:nowrap;
   }
   #hamburger{
-    display:none;
+    display:flex;
+    align-items:center;
+    justify-content:center;
     background:none;
     border:2px solid var(--line);
     width:34px;height:34px;
     cursor:pointer;
-    font-size:15px;
+    color:var(--ink);
     flex-shrink:0;
   }
+  #hamburger:hover{ background:var(--accent); color:var(--ink-on-accent); }
+  #hamburger svg{ width:18px; height:18px; overflow:visible; }
   #settings-btn{
     background:none;
     border:2px solid var(--line);
@@ -261,7 +310,20 @@
     font-size:14px;
     flex-shrink:0;
   }
-  #settings-btn:hover{ background:var(--accent); }
+  #settings-btn:hover{ background:var(--accent); color:var(--ink-on-accent); }
+  #theme-btn{
+    background:none;
+    border:2px solid var(--line);
+    width:30px;height:30px;
+    cursor:pointer;
+    flex-shrink:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:var(--ink);
+  }
+  #theme-btn:hover{ background:var(--accent); color:var(--ink-on-accent); }
+  #theme-btn svg{ width:16px; height:16px; }
 
   #chat{
     position:relative;
@@ -379,7 +441,7 @@
     top:7px; left:7px;
     width:18px; height:18px;
     background:var(--accent);
-    border:2px solid var(--ink);
+    border:2px solid var(--ink-on-accent);
     animation:bl-pulse 1.7s ease-in-out infinite;
   }
   .brand-loader .bl-orbit{
@@ -393,7 +455,7 @@
     width:12px; height:12px;
     border-radius:50%;
     background:var(--accent2);
-    border:2px solid var(--ink);
+    border:2px solid var(--ink-on-accent);
   }
   @keyframes bl-spin{
     from{ transform:rotate(0deg); }
@@ -404,8 +466,8 @@
     50%{ transform:scale(0.82); }
   }
   .thinking-block{
-    border:2px dashed #b9b6ab;
-    background:#F0EEE8;
+    border:2px dashed var(--muted);
+    background:var(--tint);
     padding:8px 10px;
     margin-bottom:10px;
     font-size:12.5px;
@@ -447,7 +509,7 @@
   .msg strong{ font-weight:700; }
   .msg em{ font-style:italic; }
   .inline-code{
-    background:#EDEAE1;
+    background:var(--tint);
     border:1px solid var(--line);
     padding:1px 5px;
     font-family:'IBM Plex Mono',monospace;
@@ -500,7 +562,7 @@
     white-space:nowrap;
   }
   .msg tbody tr:nth-child(even){
-    background:#F0EEE8;
+    background:var(--tint);
   }
   .codeblock{
     border:2px solid var(--line);
@@ -544,7 +606,7 @@
     padding:2px 8px;
     cursor:pointer;
   }
-  .copy-btn:hover{ background:var(--accent); border-color:var(--accent); color:var(--ink); }
+  .copy-btn:hover{ background:var(--accent); border-color:var(--accent); color:var(--ink-on-accent); }
   .codeblock pre{
     margin:0;
     background:#0d0d0d;
@@ -586,6 +648,7 @@
     margin-bottom:16px;
     transform:rotate(-2deg);
     background:var(--accent);
+    color:var(--ink-on-accent);
   }
 
   /* ============ INPUT ============ */
@@ -637,7 +700,7 @@
     font-weight:700;
     letter-spacing:0.3px;
   }
-  #composer-model-btn:hover, #composer-model-btn.open{ background:var(--accent); }
+  #composer-model-btn:hover, #composer-model-btn.open{ background:var(--accent); color:var(--ink-on-accent); }
   #composer-model-btn #composer-model-name{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   #composer-model-btn .chev{ font-size:9px; flex-shrink:0; }
   #composer-model-popover{
@@ -672,7 +735,7 @@
     cursor:pointer;
   }
   #attach-btn svg{ width:16px; height:16px; display:block; pointer-events:none; }
-  #attach-btn:hover, #attach-btn.drag-over{ background:var(--accent); }
+  #attach-btn:hover, #attach-btn.drag-over{ background:var(--accent); color:var(--ink-on-accent); }
   #attach-btn.drag-over{ border-style:dashed; }
   #attachment-bar{ padding:10px 8% 0; }
   @media (max-width:900px){ #attachment-bar{ padding:10px 4% 0; } }
@@ -721,7 +784,7 @@
     cursor:pointer;
   }
   #mic-btn svg{ width:16px; height:16px; display:block; pointer-events:none; }
-  #mic-btn:hover{ background:var(--accent); }
+  #mic-btn:hover{ background:var(--accent); color:var(--ink-on-accent); }
   #mic-btn.listening{
     background:var(--accent2);
     border-color:var(--accent2);
@@ -820,7 +883,7 @@
     font-size:11px;
     letter-spacing:0.5px;
   }
-  #viewer-content tbody tr:nth-child(even){ background:#F0EEE8; }
+  #viewer-content tbody tr:nth-child(even){ background:var(--tint); }
   #viewer-content pre{
     background:#0d0d0d;
     color:#f0eee8;
@@ -863,6 +926,7 @@
     padding:14px 16px;
     border-bottom:3px solid var(--line);
     background:var(--accent);
+    color:var(--ink-on-accent);
     font-family:'Archivo Black',sans-serif;
     font-size:15px;
   }
@@ -922,7 +986,7 @@
     text-transform:uppercase;
     cursor:pointer;
   }
-  .backup-btn:hover{ background:var(--accent); }
+  .backup-btn:hover{ background:var(--accent); color:var(--ink-on-accent); }
   #settings-save{
     margin:16px;
     padding:10px;
@@ -934,10 +998,17 @@
   }
   #settings-save:hover{ background:var(--accent2); }
 
-  /* ============ MOBILE DRAWER ============ */
+  /* ============ SIDEBAR COLLAPSE (desktop: push layout, no backdrop) ============ */
+  /* Applied before first paint by the anti-FOUC head script when the saved
+     preference is collapsed, so desktop doesn't flash open then snap shut.
+     GSAP takes over margin-left for every animated toggle after that. */
+  @media (min-width:761px){
+    html.sidebar-collapsed-init #sidebar{ margin-left:-270px; }
+  }
+
+  /* ============ MOBILE DRAWER (overlay + backdrop) ============ */
   #sidebar-overlay{ display:none; }
   @media (max-width:760px){
-    #hamburger{ display:flex; align-items:center; justify-content:center; }
     #app{ padding:0; gap:0; }
     #main{
       padding-top:env(safe-area-inset-top);
@@ -950,19 +1021,19 @@
       padding-top:env(safe-area-inset-top);
       padding-bottom:env(safe-area-inset-bottom);
       transform:translateX(-100%);
-      transition:transform .25s ease;
       z-index:300;
       border-top:none; border-bottom:none; border-left:none;
     }
-    #sidebar.open{ transform:translateX(0); }
     #main{ border:none; box-shadow:none; }
     #sidebar-overlay{
       display:block;
       position:fixed; inset:0;
       background:rgba(0,0,0,.4);
       z-index:250;
+      opacity:0;
+      pointer-events:none;
     }
-    #sidebar-overlay.hidden{ display:none; }
+    #sidebar-overlay.open{ pointer-events:auto; }
   }
 
   /* ============ TACTILE FEEDBACK (native-app feel on touch) ============ */
@@ -998,7 +1069,7 @@
   #app-toast-text{ flex:1; font-size:12.5px; line-height:1.4; }
   #app-toast-action{
     background:var(--accent);
-    color:var(--ink);
+    color:var(--ink-on-accent);
     border:2px solid var(--paper);
     padding:7px 12px;
     font-family:'IBM Plex Mono',monospace;
@@ -1041,11 +1112,17 @@
   <div id="main">
     <div id="chat-header">
       <div class="header-left">
-        <button id="hamburger" aria-label="Toggle menu">☰</button>
+        <button id="hamburger" aria-label="Toggle sidebar" aria-expanded="true" title="Toggle sidebar">
+          <svg viewBox="0 0 20 20" fill="none">
+            <line class="bar-top" x1="3" y1="7" x2="17" y2="7" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line>
+            <line class="bar-bot" x1="3" y1="13" x2="17" y2="13" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line>
+          </svg>
+        </button>
         <div class="name" id="chat-title-header">New chat</div>
       </div>
       <div class="header-right">
         <div class="ctx" id="msg-count">0 messages</div>
+        <button id="theme-btn" title="Toggle theme" aria-label="Toggle theme"></button>
         <button id="settings-btn" title="Settings">⚙</button>
       </div>
     </div>
@@ -1118,6 +1195,15 @@
         <span>Slower but more thorough — for reasoning models (GPT-OSS, DeepSeek-R1, etc). Off answers faster and more directly.</span>
       </div>
     </label>
+    <label>Web search (this chat)
+      <div class="think-toggle-row">
+        <input id="set-websearch" type="checkbox">
+        <span>Lets the model search the web before answering, via a local search proxy (no filtering, no account, no API key needed). Needs a tool-capable model — look for the TOOLS tag in the model list — and <code>node search-proxy.mjs</code> running.</span>
+      </div>
+    </label>
+    <label>Search proxy URL
+      <input id="set-searchproxy" type="text" placeholder="http://localhost:8765">
+    </label>
     <label>Backup (chats live only in this browser)
       <div style="display:flex;gap:8px;margin-top:6px;">
         <button id="export-chats" type="button" class="backup-btn">Export chats</button>
@@ -1129,6 +1215,7 @@
   </div>
 </div>
 
+<script src="gsap.min.js"></script>
 <script>
 const DEFAULT_SERVER = (location.protocol === 'file:')
   ? 'http://localhost:11434'
@@ -1202,6 +1289,11 @@ function saveChats(){
 function setActiveId(id){ activeId = id; localStorage.setItem('lc_active_v2', id); }
 function getServerUrl(){ return localStorage.getItem('lc_server_url') || DEFAULT_SERVER; }
 function setServerUrl(url){ localStorage.setItem('lc_server_url', url); }
+const DEFAULT_SEARCH_PROXY = (location.protocol === 'file:')
+  ? 'http://localhost:8765'
+  : `${location.protocol}//${location.hostname}:8765`;
+function getSearchProxyUrl(){ return localStorage.getItem('lc_search_proxy_url') || DEFAULT_SEARCH_PROXY; }
+function setSearchProxyUrl(url){ localStorage.setItem('lc_search_proxy_url', url); }
 
 /* ---------- markdown + tiny syntax highlighter ---------- */
 function escapeHtml(s){
@@ -1437,6 +1529,7 @@ function tagFor(id){
   if(modelLikelySupportsVision(id)) return 'VISION';
   if(/coder|code|codestral|starcoder/i.test(id)) return 'CODE';
   if(/embed/i.test(id)) return 'EMBED';
+  if(modelLikelySupportsTools(id)) return 'TOOLS';
   const meta = modelMeta[id];
   const paramNum = meta && meta.paramSize ? parseFloat(meta.paramSize) : null;
   if(paramNum >= 20) return 'HEAVY';
@@ -1458,7 +1551,8 @@ async function loadModels(){
         family: m.details && m.details.family,
         paramSize: m.details && m.details.parameter_size,
         quant: m.details && m.details.quantization_level,
-        sizeBytes: m.size
+        sizeBytes: m.size,
+        capabilities: m.capabilities || []
       };
     });
     statusEl.innerHTML = `<div class="big"><span class="dot on"></span>CONNECTED</div>${installedModels.length} model(s) · ${getServerUrl()}`;
@@ -1681,6 +1775,8 @@ const ICON_EDIT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
 const ICON_REGENERATE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>';
 const ICON_EXPAND = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>';
+const ICON_SUN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>';
+const ICON_MOON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>';
 
 const ICON_FILE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>';
 function attachmentChipHtml(a, withRemove, idx){
@@ -1691,11 +1787,11 @@ function attachmentChipHtml(a, withRemove, idx){
   return `<span class="attachment-chip">${thumb}<span class="att-name" title="${escapeHtml(a.name)}">${escapeHtml(a.name)}</span>${remove}</span>`;
 }
 
-function buildBotBubbleHtml(thinkingText, contentText, phase, thinkSeconds){
-  // phase: 'waiting' (no tokens yet) | 'thinking' | 'answering' | 'done'
+function buildBotBubbleHtml(thinkingText, contentText, phase, thinkSeconds, searchNote){
+  // phase: 'waiting' (no tokens yet) | 'thinking' | 'searching' | 'answering' | 'done'
   let html = '';
   if(thinkingText){
-    const collapsed = (phase === 'answering' || (phase === 'done' && contentText)) ? ' collapsed' : '';
+    const collapsed = (phase === 'answering' || phase === 'searching' || (phase === 'done' && contentText)) ? ' collapsed' : '';
     let label;
     if(phase === 'thinking' || phase === 'waiting'){
       // Live elapsed counter so a genuinely slow (not stuck) model doesn't look frozen.
@@ -1705,7 +1801,9 @@ function buildBotBubbleHtml(thinkingText, contentText, phase, thinkSeconds){
     }
     html += `<div class="thinking-block${collapsed}"><div class="thinking-head"><span>${label}</span><span class="chev">▾</span></div><div class="thinking-body">${escapeHtml(thinkingText)}</div></div>`;
   }
-  if(phase === 'waiting'){
+  if(phase === 'searching'){
+    html += `<div class="brand-loader"><div class="bl-square"></div><div class="bl-orbit"><div class="bl-circle"></div></div></div><div style="color:var(--muted);font-size:12px;margin-top:6px;">${escapeHtml(searchNote || 'Searching the web…')}</div>`;
+  } else if(phase === 'waiting'){
     html += '<div class="brand-loader"><div class="bl-square"></div><div class="bl-orbit"><div class="bl-circle"></div></div></div>';
   } else if(contentText){
     html += renderMarkdown(contentText);
@@ -1784,6 +1882,12 @@ function scheduleRender(el, htmlGetter){
 const VISION_MODEL_RE = /gemma3|gemma-3|llava|bakllava|moondream|vision|[-:]vl\b|qwen2\.?5?vl|pixtral|minicpm-v/i;
 function modelLikelySupportsVision(id){
   return !!id && VISION_MODEL_RE.test(id);
+}
+// Ollama reports capabilities per-model in /api/tags — more reliable than a
+// name regex, since tool-calling support depends on the model's chat template.
+function modelLikelySupportsTools(id){
+  const meta = modelMeta[id];
+  return !!(meta && Array.isArray(meta.capabilities) && meta.capabilities.includes('tools'));
 }
 const MAX_TEXT_ATTACHMENT_CHARS = 20000;
 const TEXT_EXT_RE = /\.(txt|md|markdown|csv|tsv|json|jsx?|tsx?|py|java|c|cpp|h|hpp|go|rs|rb|php|html?|css|scss|ya?ml|xml|log|sh|bash|sql|ini|toml|env|conf|cfg)$/i;
@@ -1878,6 +1982,31 @@ document.getElementById('attachment-chips').addEventListener('click', (e) => {
   const img = e.target.closest('img');
   if(img) openViewerImage(img.src);
 });
+/* ---------- web search tool (routed through search-proxy.mjs, a local
+   DuckDuckGo scraper — see search-proxy.mjs at the project root) ---------- */
+const WEB_SEARCH_TOOL = {
+  type: 'function',
+  function: {
+    name: 'web_search',
+    description: 'Search the web for current, factual, or otherwise unknown information. Returns a short list of results, each with a title, url, and snippet.',
+    parameters: {
+      type: 'object',
+      properties: { query: { type: 'string', description: 'The search query' } },
+      required: ['query']
+    }
+  }
+};
+async function performWebSearch(query){
+  try{
+    const res = await fetch(`${getSearchProxyUrl()}/search?q=${encodeURIComponent(query)}`);
+    const data = await res.json();
+    if(data.error) return `Search failed: ${data.error}`;
+    if(!data.results || !data.results.length) return `No results found for "${query}".`;
+    return data.results.map((r, i) => `${i+1}. ${r.title}\n${r.url}\n${r.snippet}`).join('\n\n');
+  }catch(e){
+    return `Search failed: could not reach the search proxy at ${getSearchProxyUrl()} (${e.message}). Is \`node search-proxy.mjs\` running?`;
+  }
+}
 function buildApiMessage(m){
   const textAtt = (m.attachments || []).filter(a => a.kind === 'text');
   const imageAtt = (m.attachments || []).filter(a => a.kind === 'image');
@@ -1977,6 +2106,10 @@ async function streamAssistantReply(){
   // isn't sent a trailing empty assistant turn — some chat templates (notably
   // gpt-oss's) get confused by that and can return an empty final answer.
   const historyForApi = activeChat.messages.map(buildApiMessage);
+  // Mutable across tool round-trips within this one reply: grows with the
+  // assistant's tool_calls turn + the tool result(s) before we ask again.
+  const apiMessages = (activeChat.systemPrompt ? [{role:'system', content:activeChat.systemPrompt}] : [])
+    .concat(historyForApi);
 
   // Push the assistant slot immediately (not just at the end) so a crash/refresh
   // mid-stream loses at most the last ~800ms of tokens instead of the whole reply.
@@ -1989,12 +2122,12 @@ async function streamAssistantReply(){
 
   isStreaming = true;
   setSendButtonMode('stop');
-  currentAbort = new AbortController();
 
   let thinkingFull = '';
   let contentFull = '';
-  let phase = 'waiting'; // waiting -> thinking -> answering -> done
+  let phase = 'waiting'; // waiting -> thinking -> [searching -> waiting]* -> answering -> done
   let thinkSeconds = 0;
+  let searchNote = '';
   let lastPersist = 0;
   function persistProgress(){
     const now = Date.now();
@@ -2006,98 +2139,138 @@ async function streamAssistantReply(){
     }
   }
 
-  // Nothing here ever gave up before: a dropped connection, a backgrounded phone
-  // tab throttling the fetch, or a model that just hangs would leave the UI
-  // stuck showing "Thinking" forever with no way out but Stop. Track when the
-  // last chunk arrived and auto-abort if the model goes silent for too long.
   const streamStartTs = Date.now();
-  let lastChunkAt = streamStartTs;
+  const useTools = !!activeChat.webSearch && modelLikelySupportsTools(activeChat.model);
+  const MAX_TOOL_ROUNDS = 3; // hard cap so a confused model can't loop forever
+  let round = 0;
   let stalled = false;
-  const STALL_MS = 45000;
-  const stallCheck = setInterval(() => {
-    if(phase === 'answering' || phase === 'done') return;
-    if(Date.now() - lastChunkAt > STALL_MS){
-      stalled = true;
-      currentAbort && currentAbort.abort();
+  let aborted = false;
+
+  while(true){
+    currentAbort = new AbortController();
+    let roundContent = '';
+    let toolCalls = null;
+
+    // Nothing here ever gave up before: a dropped connection, a backgrounded phone
+    // tab throttling the fetch, or a model that just hangs would leave the UI
+    // stuck showing "Thinking" forever with no way out but Stop. Track when the
+    // last chunk arrived and auto-abort if the model goes silent for too long.
+    let lastChunkAt = Date.now();
+    const STALL_MS = 45000;
+    const stallCheck = setInterval(() => {
+      if(phase === 'answering' || phase === 'done') return;
+      if(Date.now() - lastChunkAt > STALL_MS){
+        stalled = true;
+        currentAbort && currentAbort.abort();
+      }
+    }, 3000);
+    // Live "Thinking… Ns" counter so a slow-but-working reasoning model doesn't
+    // look identical to a genuinely frozen one.
+    const tickTimer = setInterval(() => {
+      if(phase !== 'waiting' && phase !== 'thinking') return;
+      thinkSeconds = Math.round((Date.now() - streamStartTs) / 1000);
+      botBubble.classList.toggle('msg-loading', phase === 'waiting');
+      scheduleRender(botBubble, () => buildBotBubbleHtml(thinkingFull, contentFull, phase, thinkSeconds, searchNote));
+    }, 1000);
+
+    const payload = {
+      model: activeChat.model,
+      messages: apiMessages,
+      stream: true,
+      think: !!activeChat.think,
+      options: {}
+    };
+    if(activeChat.temperature !== null && activeChat.temperature !== undefined){
+      payload.options.temperature = activeChat.temperature;
     }
-  }, 3000);
-  // Live "Thinking… Ns" counter so a slow-but-working reasoning model doesn't
-  // look identical to a genuinely frozen one.
-  const tickTimer = setInterval(() => {
-    if(phase !== 'waiting' && phase !== 'thinking') return;
-    thinkSeconds = Math.round((Date.now() - streamStartTs) / 1000);
-    botBubble.classList.toggle('msg-loading', phase === 'waiting');
-    scheduleRender(botBubble, () => buildBotBubbleHtml(thinkingFull, contentFull, phase, thinkSeconds));
-  }, 1000);
+    if(activeChat.numCtx){ payload.options.num_ctx = activeChat.numCtx; }
+    if(useTools) payload.tools = [WEB_SEARCH_TOOL];
 
-  const payload = {
-    model: activeChat.model,
-    messages: (activeChat.systemPrompt ? [{role:'system', content:activeChat.systemPrompt}] : [])
-      .concat(historyForApi),
-    stream: true,
-    think: !!activeChat.think,
-    options: {}
-  };
-  if(activeChat.temperature !== null && activeChat.temperature !== undefined){
-    payload.options.temperature = activeChat.temperature;
-  }
-  if(activeChat.numCtx){ payload.options.num_ctx = activeChat.numCtx; }
+    try{
+      const res = await fetch(`${getServerUrl()}/api/chat`, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(payload),
+        signal: currentAbort.signal
+      });
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
 
-  try{
-    const res = await fetch(`${getServerUrl()}/api/chat`, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify(payload),
-      signal: currentAbort.signal
-    });
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
+      while(true){
+        const {done, value} = await reader.read();
+        if(done) break;
+        lastChunkAt = Date.now();
+        buffer += decoder.decode(value, {stream:true});
+        const lines = buffer.split('\n');
+        buffer = lines.pop();
 
-    while(true){
-      const {done, value} = await reader.read();
-      if(done) break;
-      lastChunkAt = Date.now();
-      buffer += decoder.decode(value, {stream:true});
-      const lines = buffer.split('\n');
-      buffer = lines.pop();
-
-      for(const line of lines){
-        if(!line.trim()) continue;
-        const json = JSON.parse(line);
-        let changed = false;
-        // Reasoning models (gpt-oss, deepseek-r1, qwen3...) stream their chain-of-thought
-        // separately from the final answer — show both instead of only ever checking content,
-        // which is what made gpt-oss look like it returned nothing.
-        if(json.message && json.message.thinking){
-          if(phase === 'waiting') phase = 'thinking';
-          thinkingFull += json.message.thinking;
-          changed = true;
-        }
-        if(json.message && json.message.content){
-          if(phase !== 'answering') thinkSeconds = Math.round((Date.now() - streamStartTs) / 1000);
-          phase = 'answering';
-          contentFull += json.message.content;
-          changed = true;
-        }
-        if(changed){
-          botBubble.classList.toggle('msg-loading', phase === 'waiting');
-          scheduleRender(botBubble, () => buildBotBubbleHtml(thinkingFull, contentFull, phase, thinkSeconds));
-          persistProgress();
+        for(const line of lines){
+          if(!line.trim()) continue;
+          const json = JSON.parse(line);
+          let changed = false;
+          // Reasoning models (gpt-oss, deepseek-r1, qwen3...) stream their chain-of-thought
+          // separately from the final answer — show both instead of only ever checking content,
+          // which is what made gpt-oss look like it returned nothing.
+          if(json.message && json.message.thinking){
+            if(phase === 'waiting') phase = 'thinking';
+            thinkingFull += json.message.thinking;
+            changed = true;
+          }
+          if(json.message && json.message.content){
+            if(phase !== 'answering') thinkSeconds = Math.round((Date.now() - streamStartTs) / 1000);
+            phase = 'answering';
+            roundContent += json.message.content;
+            contentFull += json.message.content;
+            changed = true;
+          }
+          // Ollama sends tool_calls fully-formed in a single chunk (with done:true),
+          // not incrementally — no need to accumulate/merge across chunks.
+          if(json.message && Array.isArray(json.message.tool_calls) && json.message.tool_calls.length){
+            toolCalls = json.message.tool_calls;
+          }
+          if(changed){
+            botBubble.classList.toggle('msg-loading', phase === 'waiting');
+            scheduleRender(botBubble, () => buildBotBubbleHtml(thinkingFull, contentFull, phase, thinkSeconds, searchNote));
+            persistProgress();
+          }
         }
       }
-    }
-  }catch(e){
-    if(e.name === 'AbortError'){
-      if(stalled && !contentFull){
-        contentFull = `_No response for ${Math.round(STALL_MS/1000)}s — the connection may have dropped, or the model is taking unusually long. Tap Send to try again._`;
+    }catch(e){
+      if(e.name === 'AbortError'){
+        aborted = true;
+        if(stalled && !contentFull){
+          contentFull = `_No response for ${Math.round(STALL_MS/1000)}s — the connection may have dropped, or the model is taking unusually long. Tap Send to try again._`;
+        }
+      } else if(!contentFull && !thinkingFull){
+        contentFull = `**Error reaching Ollama.** Is it running at \`${getServerUrl()}\`?`;
       }
-    } else if(!contentFull && !thinkingFull){
-      contentFull = `**Error reaching Ollama.** Is it running at \`${getServerUrl()}\`?`;
+    } finally {
+      clearInterval(stallCheck);
+      clearInterval(tickTimer);
     }
-  } finally {
-    clearInterval(stallCheck);
-    clearInterval(tickTimer);
+
+    if(aborted || !(toolCalls && toolCalls.length) || round >= MAX_TOOL_ROUNDS){
+      break;
+    }
+
+    // Model wants to search — run the tool(s), feed the results back, and loop
+    // for another round instead of finalizing this reply.
+    round++;
+    const queries = toolCalls.map(tc => tc && tc.function && tc.function.arguments && tc.function.arguments.query).filter(Boolean);
+    searchNote = queries.length ? `Searching the web for "${queries.join('", "')}"…` : 'Searching the web…';
+    phase = 'searching';
+    botBubble.innerHTML = buildBotBubbleHtml(thinkingFull, contentFull, phase, thinkSeconds, searchNote);
+    persistProgress();
+
+    apiMessages.push({ role:'assistant', content: roundContent, tool_calls: toolCalls });
+    for(const tc of toolCalls){
+      const query = (tc && tc.function && tc.function.arguments && tc.function.arguments.query) || '';
+      const resultText = query ? await performWebSearch(query) : 'No query provided.';
+      apiMessages.push({ role:'tool', content: resultText });
+    }
+    searchNote = '';
+    phase = 'waiting';
   }
 
   phase = 'done';
@@ -2267,6 +2440,34 @@ if(SpeechRecognitionCtor){
   }
 }
 
+/* ---------- theme (system by default, remembers an explicit choice) ---------- */
+const THEME_KEY = 'lc_theme';
+const themeBtn = document.getElementById('theme-btn');
+const themeMetaEl = document.querySelector('meta[name="theme-color"]');
+const systemDarkMql = window.matchMedia('(prefers-color-scheme: dark)');
+function effectiveTheme(){
+  const saved = localStorage.getItem(THEME_KEY);
+  return (saved === 'dark' || saved === 'light') ? saved : (systemDarkMql.matches ? 'dark' : 'light');
+}
+function applyTheme(){
+  const saved = localStorage.getItem(THEME_KEY);
+  if(saved === 'dark' || saved === 'light') document.documentElement.setAttribute('data-theme', saved);
+  else document.documentElement.removeAttribute('data-theme');
+
+  const t = effectiveTheme();
+  themeBtn.innerHTML = t === 'dark' ? ICON_MOON : ICON_SUN;
+  themeBtn.title = t === 'dark' ? 'Dark theme (click for light)' : 'Light theme (click for dark)';
+  if(themeMetaEl) themeMetaEl.setAttribute('content', t === 'dark' ? '#121212' : '#FFD200');
+}
+themeBtn.addEventListener('click', () => {
+  localStorage.setItem(THEME_KEY, effectiveTheme() === 'dark' ? 'light' : 'dark');
+  applyTheme();
+});
+// Only matters pre-choice: keeps the icon (and page) in sync if the OS theme
+// changes live while the user hasn't picked an explicit light/dark yet.
+systemDarkMql.addEventListener('change', () => { if(!localStorage.getItem(THEME_KEY)) applyTheme(); });
+applyTheme();
+
 /* ---------- settings ---------- */
 function openSettings(){
   document.getElementById('set-server').value = getServerUrl();
@@ -2276,6 +2477,8 @@ function openSettings(){
   document.getElementById('set-temp-val').textContent = temp;
   document.getElementById('set-numctx').value = activeChat && activeChat.numCtx ? activeChat.numCtx : '';
   document.getElementById('set-think').checked = !!(activeChat && activeChat.think);
+  document.getElementById('set-websearch').checked = !!(activeChat && activeChat.webSearch);
+  document.getElementById('set-searchproxy').value = getSearchProxyUrl();
   settingsOverlayEl.classList.remove('hidden');
 }
 document.getElementById('settings-btn').addEventListener('click', openSettings);
@@ -2287,12 +2490,15 @@ document.getElementById('set-temp').addEventListener('input', (e) => {
 document.getElementById('settings-save').addEventListener('click', () => {
   const url = document.getElementById('set-server').value.trim();
   if(url) setServerUrl(url.replace(/\/+$/,''));
+  const searchProxyUrl = document.getElementById('set-searchproxy').value.trim();
+  if(searchProxyUrl) setSearchProxyUrl(searchProxyUrl.replace(/\/+$/,''));
   if(activeChat){
     activeChat.systemPrompt = document.getElementById('set-system').value;
     activeChat.temperature = parseFloat(document.getElementById('set-temp').value);
     const nc = parseInt(document.getElementById('set-numctx').value, 10);
     activeChat.numCtx = Number.isFinite(nc) && nc > 0 ? nc : null;
     activeChat.think = document.getElementById('set-think').checked;
+    activeChat.webSearch = document.getElementById('set-websearch').checked;
     saveChats();
   }
   settingsOverlayEl.classList.add('hidden');
@@ -2340,16 +2546,88 @@ document.getElementById('import-file-input').addEventListener('change', (e) => {
   reader.readAsText(file);
 });
 
-/* ---------- mobile drawer ---------- */
-function closeMobileDrawer(){
-  sidebarEl.classList.remove('open');
-  sidebarOverlayEl.classList.add('hidden');
+/* ---------- sidebar collapse (desktop: push layout / mobile: overlay drawer) ----------
+   One GSAP timeline drives both: on desktop it tweens #sidebar's margin-left so
+   #main reflows to fill the space (no backdrop, matches an always-visible panel
+   you're choosing to tuck away); on mobile #sidebar is position:fixed so the
+   same toggle instead slides it over the content with a dimming backdrop —
+   there's no room to "push" a docked panel on a phone-width screen. */
+const SIDEBAR_KEY = 'lc_sidebar_collapsed';
+const hamburgerBtn = document.getElementById('hamburger');
+const mobileMql = window.matchMedia('(max-width:760px)');
+const isMobileWidth = () => mobileMql.matches;
+let sidebarOpen = true;
+let sidebarTl = null;
+
+function morphHamburger(opening, animate){
+  const method = animate ? 'to' : 'set';
+  gsap[method]('#hamburger .bar-top', {
+    attr: opening ? { x1:5, y1:5, x2:15, y2:15 } : { x1:3, y1:7, x2:17, y2:7 },
+    duration:0.3, ease:'back.out(1.5)'
+  });
+  gsap[method]('#hamburger .bar-bot', {
+    attr: opening ? { x1:15, y1:5, x2:5, y2:15 } : { x1:3, y1:13, x2:17, y2:13 },
+    duration:0.3, ease:'back.out(1.5)'
+  });
 }
-document.getElementById('hamburger').addEventListener('click', () => {
-  sidebarEl.classList.add('open');
-  sidebarOverlayEl.classList.remove('hidden');
-});
+
+function setSidebarOpen(open, animate){
+  sidebarOpen = open;
+  hamburgerBtn.setAttribute('aria-expanded', String(open));
+  hamburgerBtn.title = open ? 'Collapse sidebar' : 'Expand sidebar';
+  morphHamburger(open, animate);
+
+  if(!animate){
+    sidebarTl && sidebarTl.kill();
+    if(isMobileWidth()){
+      gsap.set(sidebarEl, { x:0, xPercent: open ? 0 : -100 });
+      gsap.set(sidebarOverlayEl, { opacity: open ? 1 : 0, pointerEvents: open ? 'auto' : 'none' });
+    } else {
+      gsap.set(sidebarEl, { marginLeft: open ? 0 : -270 }); // 260px width + clears the 4px hard-shadow
+    }
+  } else {
+    sidebarTl && sidebarTl.kill();
+    const tl = gsap.timeline();
+    sidebarTl = tl;
+    if(isMobileWidth()){
+      if(open){
+        tl.set(sidebarOverlayEl, { pointerEvents:'auto' }, 0)
+          .fromTo(sidebarOverlayEl, { opacity:0 }, { opacity:1, duration:0.25, ease:'power2.out' }, 0)
+          .fromTo(sidebarEl, { x:0, xPercent:-100 }, { xPercent:0, duration:0.55, ease:'back.out(1.4)' }, 0);
+      } else {
+        tl.to(sidebarEl, { x:0, xPercent:-100, rotation:-2, duration:0.4, ease:'power3.in' }, 0)
+          .to(sidebarOverlayEl, { opacity:0, duration:0.25, ease:'power2.in' }, 0.05)
+          .set(sidebarOverlayEl, { pointerEvents:'none' })
+          .set(sidebarEl, { rotation:0 });
+      }
+    } else {
+      tl.to(sidebarEl, { marginLeft: open ? 0 : -270, duration: open ? 0.55 : 0.4, ease: open ? 'back.out(1.4)' : 'power3.in' }, 0);
+    }
+  }
+
+  if(!isMobileWidth()) localStorage.setItem(SIDEBAR_KEY, open ? '0' : '1');
+}
+
+// Only actually closes on mobile — on desktop the sidebar is a persistent
+// panel, and auto-collapsing it every time you pick a chat would be annoying.
+function closeMobileDrawer(){
+  if(isMobileWidth() && sidebarOpen) setSidebarOpen(false, true);
+}
+
+hamburgerBtn.addEventListener('click', () => setSidebarOpen(!sidebarOpen, true));
 sidebarOverlayEl.addEventListener('click', closeMobileDrawer);
+document.addEventListener('keydown', (e) => {
+  if(e.key === 'Escape' && isMobileWidth() && sidebarOpen) setSidebarOpen(false, true);
+});
+// Crossing the breakpoint (e.g. rotating a tablet) re-derives the right
+// default for the new layout without animating — a resize isn't a user toggle.
+mobileMql.addEventListener('change', () => {
+  const open = isMobileWidth() ? false : (localStorage.getItem(SIDEBAR_KEY) !== '1');
+  setSidebarOpen(open, false);
+});
+
+setSidebarOpen(isMobileWidth() ? false : (localStorage.getItem(SIDEBAR_KEY) !== '1'), false);
+document.documentElement.classList.remove('sidebar-collapsed-init');
 
 /* ---------- keep #app sized to the real visible area on mobile ----------
    dvh alone doesn't always update reliably when the on-screen keyboard opens
